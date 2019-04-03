@@ -27,6 +27,13 @@
 
 #define ISP_CHECKBUSY() while (isp_get_status()) {}
 
+#define HWRAP_LOG printf
+#define HWRAP_TAG "[HAL_WRAPPER]"
+#define HWRAP_ENTER														    \
+	do {														     		\
+		HWRAP_LOG(HWRAP_TAG"%s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__);\
+	} while (0)
+
 #define HAL_MAX_RANDOM_SIZE 256
 #define HAL_MAX_ECP_KEY_SIZE_ALT 128
 #define HAL_MAX_ECDSA_LEN 256
@@ -470,16 +477,19 @@ static int hal_asn1_get_mpi(unsigned char **p, const unsigned char *end, hal_mpi
  */
 int hal_init(hal_init_param *params)
 {
+	HWRAP_ENTER;
 	return HAL_NOT_SUPPORTED;
 }
 
 int hal_deinit(void)
 {
+	HWRAP_ENTER;
 	return HAL_NOT_SUPPORTED;
 }
 
 int hal_free_data(hal_data *data)
 {
+	HWRAP_ENTER;
 	if (data) {
 		if (data->data) {
 			free(data->data);
@@ -494,6 +504,7 @@ int hal_free_data(hal_data *data)
 
 int hal_get_status(void)
 {
+	HWRAP_ENTER;
 	return isp_get_status();
 }
 
@@ -502,6 +513,7 @@ int hal_get_status(void)
  */
 int hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_data *prikey)
 {
+	HWRAP_ENTER;
 	if (prikey != NULL) {
 		return HAL_NOT_SUPPORTED;
 	}
@@ -559,6 +571,7 @@ int hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_data *pr
 
 int hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	if ( mode <= HAL_KEY_ECC_SEC_P512R1 && mode >= HAL_KEY_ECC_BRAINPOOL_P256R1 ) {
 		struct sECC_KEY ecc_key;
@@ -670,6 +683,7 @@ static int hal_get_key_type(hal_key_type mode, unsigned int *key_type)
 
 int hal_remove_key(hal_key_type mode, uint32_t key_idx)
 {
+	HWRAP_ENTER;
 	unsigned int key_type;
 	uint32_t ret;
 
@@ -688,6 +702,7 @@ int hal_remove_key(hal_key_type mode, uint32_t key_idx)
 
 int hal_generate_key(hal_key_type mode, uint32_t key_idx)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	ISP_CHECKBUSY();
 	switch (mode) {
@@ -769,6 +784,7 @@ int hal_generate_key(hal_key_type mode, uint32_t key_idx)
 
 int hal_generate_random(uint32_t len, hal_data *random)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	unsigned int inbuf[HAL_MAX_RANDOM_SIZE];
 
@@ -795,6 +811,7 @@ int hal_generate_random(uint32_t len, hal_data *random)
 
 int hal_get_hash(hal_hash_type mode, hal_data *input, hal_data *hash)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	struct sHASH_MSG h_param;
 	unsigned int object_id;
@@ -844,6 +861,7 @@ int hal_get_hash(hal_hash_type mode, hal_data *input, hal_data *hash)
 
 int hal_get_hmac(hal_hmac_type mode, hal_data *input, uint32_t key_idx, hal_data *hmac)
 {
+	HWRAP_ENTER;
 	/* isp_hmac_securekey returns ERROR_SSTORAGE_SFS_FREAD */
 /*
 	uint32_t ret;
@@ -892,6 +910,7 @@ int hal_get_hmac(hal_hmac_type mode, hal_data *input, uint32_t key_idx, hal_data
 
 int hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, hal_data *sign)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	unsigned int padding = 0;
 	struct sRSA_SIGN rsa_sign;
@@ -943,6 +962,7 @@ int hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, hal_dat
 
 int hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, uint32_t key_idx)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	unsigned int padding = 0;
 	struct sRSA_SIGN rsa_sign;
@@ -987,6 +1007,7 @@ int hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, uint32_
 
 int hal_ecdsa_sign_md(hal_data *hash, uint32_t key_idx, hal_ecdsa_mode *mode, hal_data *sign)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	unsigned char s_buf[HAL_MAX_ECP_KEY_SIZE_ALT];
 	unsigned char r_buf[HAL_MAX_ECP_KEY_SIZE_ALT];
@@ -1076,6 +1097,7 @@ cleanup:
 
 int hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *sign, uint32_t key_idx)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	unsigned char *p = (unsigned char *) sign->data;
 	const unsigned char *end = sign->data + sign->data_len;
@@ -1184,6 +1206,7 @@ cleanup:
 
 int hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	struct sDH_PARAM d_param;
 	unsigned int pubkey_len;
@@ -1234,6 +1257,7 @@ int hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
 
 int hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, hal_data *shared_secret)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	struct sDH_PARAM d_param;
 	memset(&d_param, 0, sizeof(struct sDH_PARAM));
@@ -1271,6 +1295,7 @@ int hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, hal_dat
 
 int hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key_idx, hal_data *shared_secret)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	struct sECC_KEY ecc_pub;
 
@@ -1322,6 +1347,7 @@ int hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key_idx, 
 
 int hal_set_certificate(uint32_t cert_idx, hal_data *cert_in)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	unsigned char *cert = cert_in->data;
 	unsigned int cert_len = cert_in->data_len;
@@ -1339,6 +1365,7 @@ int hal_set_certificate(uint32_t cert_idx, hal_data *cert_in)
 
 int hal_get_certificate(uint32_t cert_idx, hal_data *cert_out)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	unsigned char buf[HAL_MAX_BUF_SIZE];
 	unsigned int buf_len;
@@ -1367,11 +1394,13 @@ int hal_get_certificate(uint32_t cert_idx, hal_data *cert_out)
 
 int hal_remove_certificate(uint32_t cert_idx)
 {
+	HWRAP_ENTER;
 	return HAL_NOT_SUPPORTED;
 }
 
 int hal_get_factory_key(uint32_t key_idx, hal_data *key)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	if (key_idx == FACTORYKEY_ARTIK_DEVICE) {
 		ISP_CHECKBUSY();
@@ -1390,6 +1419,7 @@ int hal_get_factory_key(uint32_t key_idx, hal_data *key)
 
 int hal_get_factory_cert(uint32_t cert_idx, hal_data *cert)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	if (cert_idx == FACTORYKEY_ARTIK_CERT) {
 		ISP_CHECKBUSY();
@@ -1408,6 +1438,7 @@ int hal_get_factory_cert(uint32_t cert_idx, hal_data *cert)
 
 int hal_get_factory_data(uint32_t data_idx, hal_data *data)
 {
+	HWRAP_ENTER;
 	return HAL_NOT_SUPPORTED;
 }
 
@@ -1418,6 +1449,7 @@ int hal_get_factory_data(uint32_t data_idx, hal_data *data)
 
 int hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_t key_idx, hal_data *enc_data)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	struct sAES_PARAM param;
 	unsigned char aes_output[HAL_MAX_BUF_SIZE];
@@ -1465,6 +1497,7 @@ int hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_t key_i
 
 int hal_aes_decrypt(hal_data *enc_data, hal_aes_param *aes_param, uint32_t key_idx, hal_data *dec_data)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	struct sAES_PARAM param;
 	unsigned char aes_output[HAL_MAX_BUF_SIZE];
@@ -1512,6 +1545,7 @@ int hal_aes_decrypt(hal_data *enc_data, hal_aes_param *aes_param, uint32_t key_i
 
 int hal_rsa_encrypt(hal_data *dec_data, hal_rsa_mode *rsa_mode, uint32_t key_idx, hal_data *enc_data)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	unsigned char output[HAL_MAX_BUF_SIZE];
 
@@ -1530,6 +1564,7 @@ int hal_rsa_encrypt(hal_data *dec_data, hal_rsa_mode *rsa_mode, uint32_t key_idx
 
 int hal_rsa_decrypt(hal_data *enc_data, hal_rsa_mode *rsa_mode, uint32_t key_idx, hal_data *dec_data)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	unsigned char output[HAL_MAX_BUF_SIZE];
 	ISP_CHECKBUSY();
@@ -1551,6 +1586,7 @@ int hal_rsa_decrypt(hal_data *enc_data, hal_rsa_mode *rsa_mode, uint32_t key_idx
 
 int hal_write_storage(uint32_t ss_idx, hal_data *data)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 
 	ISP_CHECKBUSY();
@@ -1566,6 +1602,7 @@ int hal_write_storage(uint32_t ss_idx, hal_data *data)
 
 int hal_read_storage(uint32_t ss_idx, hal_data *data)
 {
+	HWRAP_ENTER;
 	uint32_t ret;
 	unsigned char output[HAL_MAX_BUF_SIZE];
 
@@ -1584,6 +1621,7 @@ int hal_read_storage(uint32_t ss_idx, hal_data *data)
 
 int hal_delete_storage(uint32_t ss_idx)
 {
+	HWRAP_ENTER;
 	return HAL_NOT_SUPPORTED;
 }
 
