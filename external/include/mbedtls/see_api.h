@@ -28,7 +28,7 @@
 #include <sys/types.h>
 #include <stdio.h>
 
-#include "../../../os/arch/arm/src/s5j/sss/isp_custom.h"
+#include "../../../os/drivers/se/sss/isp_custom.h"
 #include "see_cert.h"
 
 /****************************************************************************

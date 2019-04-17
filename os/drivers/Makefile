@@ -90,6 +90,7 @@ include ttrace$(DELIM)Make.defs
 include usbdev$(DELIM)Make.defs
 include usbhost$(DELIM)Make.defs
 include wireless$(DELIM)Make.defs
+include se$(DELIM)Make.defs
 
 ifneq ($(CONFIG_NFILE_DESCRIPTORS),0)
   CSRCS += dev_null.c dev_zero.c
@@ -134,7 +135,11 @@ AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 
 SRCS = $(ASRCS) $(CSRCS)
-OBJS = $(AOBJS) $(COBJS)
+OBJS = $(AOBJS) $(COBJS) $(SE_OBJS)
+
+# $(info $(CSRCS))
+# $(info $(OBJS))
+# $(error TEST SE)
 
 BIN = libdrivers$(LIBEXT)
 
