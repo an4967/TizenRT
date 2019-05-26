@@ -31,6 +31,8 @@
 #include <pthread.h>
 #include <sys/ioctl.h>
 #include <poll.h>
+#include <semaphore.h>
+
 #include <iotbus/iotbus_error.h>
 #include <iotbus/iotbus_uart.h>
 
@@ -52,8 +54,8 @@ struct _iotbus_uart_s {
 	int timeout;
 	uint8_t buf[CONFIG_IOTBUS_UART_BUF_SIZE];
 	size_t len;
-	iotbus_uart_state_e rx_state;
-	iotbus_uart_state_e tx_state;
+	sem_t rx_sem;
+	sem_t tx_sem;
 };
 
 struct _iotbus_uart_wrapper_s {
@@ -90,11 +92,17 @@ static void *iotbus_uart_out_handler(void *hnd)
 	fds[0].fd = handle->fd;
 	fds[0].events = POLLOUT | POLLERR;
 
-	handle->tx_state = IOTBUS_UART_BUSY;
+	if (sem_trywait(&handle->tx_sem) < 0) {
+		if (handle->callback) {
+			handle->callback((struct _iotbus_uart_wrapper_s *)hnd, IOTBUS_ERROR_DEVICE_NOT_READY);
+		}
+		return 0;
+	}
 	while (1) {
 		ret = poll(fds, 1, handle->timeout);
 		if (ret < 0) {
-			continue;
+			ret = IOTBUS_ERROR_UNKNOWN;
+			break;
 		} else if (ret == 0) {
 			ret = IOTBUS_ERROR_TIMED_OUT;
 			break;
@@ -116,10 +124,11 @@ static void *iotbus_uart_out_handler(void *hnd)
 			}
 		}
 	}
-	handle->tx_state = IOTBUS_UART_RDY;
+	sem_post(&handle->tx_sem);
 	if (handle->callback) {
 		handle->callback((struct _iotbus_uart_wrapper_s *)hnd, ret);
 	}
+
 	idbg("[UART] exit iotbus_uart handler\n");
 
 	return 0;
@@ -168,6 +177,8 @@ iotbus_uart_context_h iotbus_uart_init(const char *path)
 		handle->evt_hnd[i] = NULL;
 	}
 	handle->callback = NULL;
+	sem_init(&handle->rx_sem, 0, 1);
+	sem_init(&handle->tx_sem, 0, 1);
 	dev->handle = handle;
 
 	return dev;
@@ -396,12 +407,16 @@ int iotbus_uart_read(iotbus_uart_context_h hnd, char *buf, unsigned int length)
 
 	handle = (struct _iotbus_uart_s *)hnd->handle;
 
+	if (sem_trywait(&handle->rx_sem) < 0) {
+		return IOTBUS_ERROR_DEVICE_NOT_READY;
+	}
 	fd = handle->fd;
 	ret = read(fd, buf, length);
 	if (ret < 0) {
+		sem_post(&handle->rx_sem);
 		return IOTBUS_ERROR_UNKNOWN;
 	}
-
+	sem_post(&handle->rx_sem);
 	return ret;
 }
 
@@ -410,6 +425,7 @@ int iotbus_uart_read_wait(iotbus_uart_context_h hnd, char *buf, unsigned int len
 	struct _iotbus_uart_s *handle;
 	int ret;
 	ssize_t nbytes;
+	ssize_t received = 0;
 
 	struct pollfd fds[1];
 
@@ -419,19 +435,14 @@ int iotbus_uart_read_wait(iotbus_uart_context_h hnd, char *buf, unsigned int len
 
 	handle = (struct _iotbus_uart_s *)hnd->handle;
 
-	if (handle->rx_state == IOTBUS_UART_BUSY) {
-		return IOTBUS_ERROR_DEVICE_NOT_READY;
-	}
-
-	handle = (struct _iotbus_uart_s *)hnd->handle;
-
 	memset(fds, 0, sizeof(fds));
 	fds[0].fd = handle->fd;
 	fds[0].events = POLLIN | POLLERR;
 
-	handle->rx_state = IOTBUS_UART_BUSY;
+	if (sem_trywait(&handle->rx_sem) < 0) {
+		return IOTBUS_ERROR_DEVICE_NOT_READY;
+	}
 
-	ssize_t received = 0;
 	while (1) {
 		ret = poll(fds, 1, timeout);
 		if (ret < 0) {
@@ -468,7 +479,7 @@ int iotbus_uart_read_wait(iotbus_uart_context_h hnd, char *buf, unsigned int len
 			}
 		}
 	}
-	handle->rx_state = IOTBUS_UART_RDY;
+	sem_post(&handle->rx_sem);
 	idbg("[UART] exit iotbus_uart_read_wait \n");
 
 	return ret;
@@ -490,11 +501,16 @@ int iotbus_uart_write(iotbus_uart_context_h hnd, const char *buf, unsigned int l
 		return IOTBUS_ERROR_INVALID_PARAMETER;
 	}
 
+	if (sem_trywait(&handle->tx_sem) < 0) {
+		return IOTBUS_ERROR_DEVICE_NOT_READY;
+	}
 	fd = handle->fd;
 	ret = write(fd, buf, length);
 	if (ret < 0) {
+		sem_post(&handle->tx_sem);
 		return IOTBUS_ERROR_UNKNOWN;
 	}
+	sem_post(&handle->tx_sem);
 	return ret;
 }
 
@@ -507,10 +523,6 @@ int iotbus_uart_async_write(iotbus_uart_context_h hnd, const char *buf, unsigned
 	}
 
 	handle = (struct _iotbus_uart_s *)hnd->handle;
-
-	if (handle->tx_state == IOTBUS_UART_BUSY) {
-		return IOTBUS_ERROR_DEVICE_NOT_READY;
-	}
 
 	handle->callback = cb;
 	handle->timeout = timeout;
