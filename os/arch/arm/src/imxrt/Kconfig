@@ -379,20 +379,20 @@ config IMXRT_PWM
 if IMXRT_PWM
 
 	config IMXRT_PWM1
-		bool "PWM IMXRT_PWM1"
+		bool "PWM Controller 1, Channel 1 to Channel 8"
 		default n
 
 	config IMXRT_PWM2
-		bool "PWM IMXRT_PWM2"
+		bool "PWM Controller 2, Channel 9 to Channel 16"
 		default n
 	
-	if ARCH_CHIP_FAMILY_IMXRT102x
+	if ARCH_CHIP_FAMILY_IMXRT105x
 	config IMXRT_PWM3
-		bool "PWM IMXRT_PWM3"
+		bool "PWM Controller 3, Channel 17 to Channel 24"
 		default n
 
 	config IMXRT_PWM4
-		bool "PWM IMXRT_PWM4"
+		bool "PWM Controller 4, Channel 25 to Channel 32"
 		default n
 	endif
 endif # IMXRT_PWM
