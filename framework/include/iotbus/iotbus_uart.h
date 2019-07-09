@@ -240,6 +240,16 @@ int iotbus_uart_set_interrupt(iotbus_uart_context_h hnd, iotbus_uart_intr_e int_
  */
 int iotbus_uart_unset_interrupt(iotbus_uart_context_h hnd, iotbus_uart_intr_e int_type);
 
+/**
+ * @brief Get uart device number.
+ *
+ * @details @b #include <iotbus/iotbus_uart.h>
+ * @param[in] hnd handle of uart_context
+ * @return On success, the device number is returned. On failure, a negative value is returned.
+ * @since TizenRT v2.0
+ */
+int iotbus_uart_get_device(iotbus_uart_context_h hnd);
+
 #ifdef __cplusplus
 }
 #endif

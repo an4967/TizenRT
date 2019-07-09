@@ -620,8 +620,6 @@ static void signal_handler(int sig, siginfo_t *info, void *ctx)
 
 static pthread_addr_t uart_intr_thread(pthread_addr_t arg)
 {
-	int ret;
-
 	iotbus_uart_intr_e int_type = (iotbus_uart_intr_e)(unsigned long)arg;
 	if (int_type < 0 || int_type >= IOTBUS_UART_INTR_MAX) {
 		ibdbg("Error : invalid int type\n");
@@ -631,7 +629,7 @@ static pthread_addr_t uart_intr_thread(pthread_addr_t arg)
 	ibdbg("Thread for [%d]\n", int_type);
 
 	struct sigaction sigact;
-	sigact.sa_handler = signal_handler;
+	sigact.sa_sigaction = signal_handler;
 	(void)sigfillset(&sigact.sa_mask);
 	(void)sigdelset(&sigact.sa_mask, _uart_sig[int_type]);
 	sigact.sa_flags = SA_SIGINFO;
@@ -639,8 +637,8 @@ static pthread_addr_t uart_intr_thread(pthread_addr_t arg)
 	sigaction(_uart_sig[int_type], &sigact, NULL);
 
 	// Not to finish this thread.
-	while(1) { usleep(1); }
-		
+	while(1) { sleep(1); }
+
 	pthread_exit(NULL);
 	return NULL;
 }
@@ -748,6 +746,22 @@ int iotbus_uart_unset_interrupt(iotbus_uart_context_h hnd, iotbus_uart_intr_e in
 	handle->cb[int_type] = NULL;
 	return 0;
 }
+
+/**
+ * @brief Gets a device number of the UART.
+ */
+int iotbus_uart_get_device(iotbus_uart_context_h hnd)
+{
+	struct _iotbus_uart_s *handle;
+
+	if (!hnd || !hnd->handle) {
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
+
+	handle = (struct _iotbus_uart_s *)hnd->handle;
+	return handle->device;
+}
+
 
 #ifdef __cplusplus
 }
