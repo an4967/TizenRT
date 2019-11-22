@@ -56,47 +56,90 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+#include <iotbus/iotbus_error.h>
+#include <iotbus/iotbus_adc.h>
 
 /****************************************************************************
  * hello_main
  ****************************************************************************/
-
-
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int hello_main(int argc, char *argv[])
-#endif
+static void read_cb(int channel, uint32_t data)
 {
-	// printf("Hello, World!!\n");
+	printf("Channel : %d, Data : %d\n", channel, data);
+}
 
-	if (argc > 1) {
-		if (argv[1][0] == 'a' || argv[1][0] == 'A') {
-			printf("[A!]\n");
-			usleep(500 * 1000);
-			gpio_test_main();
-		} else if (argv[1][0] == 'b' || argv[1][0] == 'B') {
-			printf("[B!]\n");
-			usleep(500 * 1000);
-			uart_test_main();
-		} else if (argv[1][0] == 'c' || argv[1][0] == 'C') {
-			printf("[C!]\n");
-			usleep(500 * 1000);
-			gpio_test_main2();
-		} else if (argv[1][0] == 'd' || argv[1][0] == 'D') {
-			printf("[D!]\n");
-			usleep(500 * 1000);
-			pwm_test_main();
-		} else if (argv[1][0] == 'e' || argv[1][0] == 'E') {
-			printf("[E!]\n");
-			usleep(500 * 1000);
-			mem_test_main();
-		}
+int adc_test_main(void)
+{
+	// printf("Hello, IOTBUS ADC!!\n");
 
-	} else {
-		printf("[NOT]\n");
+	int ret;
+
+	iotbus_adc_context_h m_adc1 = iotbus_adc_init(0, 0);
+	iotbus_adc_context_h m_adc2 = iotbus_adc_init(0, 1);
+	iotbus_adc_context_h m_adc3 = iotbus_adc_init(0, 2);
+
+	// ret = iotbus_adc_get_state(m_adc);
+	// if (ret < 0) {
+	// 	printf("[ERROR] iotbus_adc_get_state1 : %d\n", ret);
+	// 	return 0;
+	// }
+	// printf("iotbus_adc_get_state1 : %d\n", ret);
+
+	// ret = iotbus_adc_start(m_adc, read_cb);
+	// if (ret != IOTBUS_ERROR_NONE) {
+	// 	printf("[ERROR] iotbus_adc_start : %d\n", ret);
+	// 	return 0;
+	// }
+
+	// ret = iotbus_adc_get_state(m_adc);
+	// if (ret < 0) {
+	// 	printf("[ERROR] iotbus_adc_get_state2 : %d\n", ret);
+	// 	return 0;
+	// }
+	// printf("iotbus_adc_get_state2 : %d\n", ret);
+
+	// sleep(3);
+
+	// if (ret == IOTBUS_ADC_BUSY) {
+	// 	ret = iotbus_adc_stop(m_adc);
+	// 	if (ret != IOTBUS_ERROR_NONE) {
+	// 		printf("[ERROR] iotbus_adc_stop : %d\n", ret);
+    //         return 0;
+	// 	}
+	// }
+
+	// ret = iotbus_adc_get_state(m_adc);
+	// if (ret < 0) {
+	// 	printf("[ERROR] iotbus_adc_get_state3 : %d\n", ret);
+	// 	return 0;
+	// }
+	// printf("iotbus_adc_get_state3 : %d\n", ret);
+
+	ret = iotbus_adc_get_sample(m_adc1, 1000);
+	if (ret < 0) {
+		printf("[ERROR] iotbus_adc_get_sample1 : %d\n", ret);
+        return 0;
 	}
-	
+    printf("iotbus_adc_get_sample1 : %d\n", ret);
+
+	ret = iotbus_adc_get_sample(m_adc2, 1000);
+	if (ret < 0) {
+		printf("[ERROR] iotbus_adc_get_sample2 : %d\n", ret);
+        return 0;
+	}
+    printf("iotbus_adc_get_sample2 : %d\n", ret);
+
+	ret = iotbus_adc_get_sample(m_adc3, 1000);
+	if (ret < 0) {
+		printf("[ERROR] iotbus_adc_get_sample3 : %d\n", ret);
+        return 0;
+	}
+    printf("iotbus_adc_get_sample3 : %d\n", ret);
+
+	iotbus_adc_deinit(m_adc1);
+	iotbus_adc_deinit(m_adc2);
+	iotbus_adc_deinit(m_adc3);
 
 	return 0;
 }

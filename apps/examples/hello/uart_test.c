@@ -56,47 +56,139 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+#include <iotbus/iotbus_uart.h>
+
+iotbus_uart_context_h m_uart;
+static char tx_buf[] = "NMLKJIHGFEDCBA";
+static char tx_buf2[] = "987654321";
+// static char tx_buf[] = "FEDCBA";
+static char rx_buf[30] = { 0, };
+static int tx_cnt = 0;
+static int tx_size = 0;
+static int tx_cnt2 = 0;
+static int tx_size2 = 0;
+static int rx_cnt = 0;
 
 /****************************************************************************
  * hello_main
  ****************************************************************************/
-
-
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int hello_main(int argc, char *argv[])
-#endif
+static void uart_cb0(iotbus_uart_context_h hnd)
 {
-	// printf("Hello, World!!\n");
+	printf("[UART] Writing is done!\n");
+}
 
-	if (argc > 1) {
-		if (argv[1][0] == 'a' || argv[1][0] == 'A') {
-			printf("[A!]\n");
-			usleep(500 * 1000);
-			gpio_test_main();
-		} else if (argv[1][0] == 'b' || argv[1][0] == 'B') {
-			printf("[B!]\n");
-			usleep(500 * 1000);
-			uart_test_main();
-		} else if (argv[1][0] == 'c' || argv[1][0] == 'C') {
-			printf("[C!]\n");
-			usleep(500 * 1000);
-			gpio_test_main2();
-		} else if (argv[1][0] == 'd' || argv[1][0] == 'D') {
-			printf("[D!]\n");
-			usleep(500 * 1000);
-			pwm_test_main();
-		} else if (argv[1][0] == 'e' || argv[1][0] == 'E') {
-			printf("[E!]\n");
-			usleep(500 * 1000);
-			mem_test_main();
-		}
-
-	} else {
-		printf("[NOT]\n");
+static void uart_cb1(iotbus_uart_context_h hnd)
+{
+	int ret;
+	// dbg("-->TX [%d]!\n", tx_cnt);
+	if (tx_cnt >= tx_size) {
+		dbg("Write Done1!\n");
+		return;
 	}
+	ret = iotbus_uart_write(hnd, &tx_buf[tx_cnt++], 1);
+	if (ret < 0) {
+		dbg("Fail to tx[%d]\n", ret);
+	}
+}
+
+static void uart_cb3(iotbus_uart_context_h hnd)
+{
+	int ret;
+	// dbg("-->TX [%d]!\n", tx_cnt);
+	if (tx_cnt2 >= tx_size2) {
+		dbg("Write Done2!\n");
+		return;
+	}
+	ret = iotbus_uart_write(hnd, &tx_buf2[tx_cnt2++], 1);
+	if (ret < 0) {
+		dbg("Fail to tx2[%d]\n", ret);
+	}
+}
+
+static void uart_cb2(iotbus_uart_context_h hnd)
+{
+	int ret;
+	char tmp;
+
+	// dbg("<--RX [%d]!\n", rx_cnt);
+	ret = iotbus_uart_read(hnd, &tmp, 1);
+	if (ret < 0) {
+		dbg("!! READ ERROR [%d] !!\n", ret);
+		return;
+	}
+	rx_buf[rx_cnt++] = tmp;
+}
+
+int uart_test_main(void)
+{
+	// printf("Hello, UART TEST!!\n");
+
+	int i;
+
+	m_uart = iotbus_uart_open(2);
+
+	int ret;
+
+	if (m_uart == NULL) {
+		printf("!!!!!! m_uart is NULL !!!!!!\n");
+		return 0;
+	}
+
+	ret = iotbus_uart_set_interrupt(m_uart, IOTBUS_UART_TX_EMPTY, uart_cb1, 250);
+	if (ret != IOTBUS_ERROR_NONE) {
+		printf("!!!!!! iotbus_uart_set_interrupt1 [%d] !!!!!!\n", ret);
+		return 0;
+	}
+
+	ret = iotbus_uart_set_interrupt(m_uart, IOTBUS_UART_RX_AVAIL, uart_cb2, 250);
+	if (ret != IOTBUS_ERROR_NONE) {
+		printf("!!!!!! iotbus_uart_set_interrupt2 [%d] !!!!!!\n", ret);
+		return 0;
+	}
+
+	rx_cnt = 0;
+	tx_cnt = 0;
+	tx_size = strlen(tx_buf);
+
+	iotbus_uart_write(m_uart, &tx_buf[tx_cnt++], 1);
 	
+	int cnt = 3;
+	while(cnt--) {
+		sleep(1);
+	}
+
+	ret = iotbus_uart_unset_interrupt(m_uart, IOTBUS_UART_TX_EMPTY);
+	if (ret != IOTBUS_ERROR_NONE) {
+		printf("!!!!!! iotbus_uart_unset_interrupt1 [%d] !!!!!!\n", ret);
+		return 0;
+	}
+
+	ret = iotbus_uart_set_interrupt(m_uart, IOTBUS_UART_TX_EMPTY, uart_cb3, 250);
+	if (ret != IOTBUS_ERROR_NONE) {
+		printf("!!!!!! iotbus_uart_set_interrupt3 [%d] !!!!!!\n", ret);
+		return 0;
+	}
+
+	tx_cnt2 = 0;
+	tx_size2 = strlen(tx_buf2);
+
+	iotbus_uart_write(m_uart, &tx_buf2[tx_cnt2++], 1);
+
+	cnt = 3;
+	while(cnt--) {
+		sleep(1);
+	}
+	// usleep(1000 * 1000);
+
+	printf("Tx : %d/%d, %d/%d, Rx : %d\n--> ", tx_cnt, tx_size, tx_cnt2, tx_size2, rx_cnt);
+	for (i = 0; i < rx_cnt; i++) {
+		printf("%c", rx_buf[i]);
+	}
+	printf("\n[UART] DONE!!!\n");
+
+	iotbus_uart_stop(m_uart);
 
 	return 0;
 }

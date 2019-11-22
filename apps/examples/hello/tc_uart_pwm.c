@@ -56,11 +56,20 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+#include <iotbus/iotbus_error.h>
+#include <iotbus/iotbus_gpio.h>
+#include <iotbus/iotbus_pwm.h>
+#include <iotbus/iotbus_uart.h>
 
 /****************************************************************************
  * hello_main
  ****************************************************************************/
-
+void write_done(iotbus_error_e ret) {
+	printf("UART write callback![%d]\n", ret);
+	fflush(stdout);
+}
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -68,35 +77,118 @@ int main(int argc, FAR char *argv[])
 int hello_main(int argc, char *argv[])
 #endif
 {
-	// printf("Hello, World!!\n");
+	// printf("Hello, IOTBUS UART!!\n");
 
-	if (argc > 1) {
-		if (argv[1][0] == 'a' || argv[1][0] == 'A') {
-			printf("[A!]\n");
-			usleep(500 * 1000);
-			gpio_test_main();
-		} else if (argv[1][0] == 'b' || argv[1][0] == 'B') {
-			printf("[B!]\n");
-			usleep(500 * 1000);
-			uart_test_main();
-		} else if (argv[1][0] == 'c' || argv[1][0] == 'C') {
-			printf("[C!]\n");
-			usleep(500 * 1000);
-			gpio_test_main2();
-		} else if (argv[1][0] == 'd' || argv[1][0] == 'D') {
-			printf("[D!]\n");
-			usleep(500 * 1000);
-			pwm_test_main();
-		} else if (argv[1][0] == 'e' || argv[1][0] == 'E') {
-			printf("[E!]\n");
-			usleep(500 * 1000);
-			mem_test_main();
-		}
+	// char *buf = "ABCDEF";
+	// size_t len = 6;
 
-	} else {
-		printf("[NOT]\n");
-	}
+	// char r_buf[100] = { 0, };
+	// int ret;
+
+	// iotbus_uart_context_h m_uart = iotbus_uart_init("/dev/ttyS1");
+
+	// ret = iotbus_uart_async_write(m_uart, buf, len, write_done, 1000);
+	// if (ret < 0) {
+	// 	printf("UART Error 1 [%d]\n", ret);
+	// 	return 0;
+	// }
+
+	// size_t recv = 0;
+	// while (recv < len) {
+	// 	ret = iotbus_uart_read(m_uart, r_buf, sizeof(r_buf));
+	// 	if (ret < 0) {
+	// 		printf("UART Error 2 [%d]\n", ret);
+	// 		fflush(stdout);
+	// 		break;
+	// 	} else if (ret == 0) {
+	// 		printf("UART Loop Done\n");
+	// 		fflush(stdout);
+	// 		break;
+	// 	}
+	// 	recv += ret;
+	// 	printf("Result[%d] : %s\n", ret, r_buf);
+	// 	memset(r_buf, 0 , sizeof(r_buf));
+	// }
+
+	// printf("UART Done\n");
+
+	// printf("Hello, IOTBUS GPIO!!\n");
 	
+	// int value;
+	// if (argc > 1) {
+	// 	value = atoi(argv[1]);
+	// }
+
+	// printf("Value : %d\n", value);
+
+	// iotbus_gpio_context_h m_gpio1 = iotbus_gpio_open(45);
+	// iotbus_gpio_set_direction(m_gpio1, IOTBUS_GPIO_DIRECTION_OUT);
+
+	// iotbus_gpio_context_h m_gpio2 = iotbus_gpio_open(49);
+	// iotbus_gpio_set_direction(m_gpio2, IOTBUS_GPIO_DIRECTION_IN);
+
+	// iotbus_gpio_write(m_gpio1, value);
+
+	// int ret = iotbus_gpio_read(m_gpio2);
+
+	// printf("ret : %d\n");
+
+	// iotbus_gpio_close(m_gpio1);
+	// iotbus_gpio_close(m_gpio2);
+
+	// printf("Hello, IOTBUS PWM!!\n");
+
+	// int ret;
+	// int i;
+
+	// iotbus_pwm_context_h m_pwm = iotbus_pwm_open(0, 0);
+	
+	// ret = iotbus_pwm_set_period(m_pwm, 50);
+	// if (ret != IOTBUS_ERROR_NONE) {
+	// 	printf("PWM ERROR 0 [%d]\n", ret);
+	// 	return 0;
+	// }
+
+	// ret = iotbus_pwm_set_duty_cycle(m_pwm, 90);
+	// if (ret != IOTBUS_ERROR_NONE) {
+	// 	printf("PWM ERROR 1 [%d]\n", ret);
+	// 	return 0;
+	// }
+
+	// iotbus_pwm_set_enabled(m_pwm, IOTBUS_PWM_ENABLE);
+	// printf("Enabled!!\n");
+	// sleep(5);
+
+	// iotbus_pwm_set_enabled(m_pwm, IOTBUS_PWM_DISABLE);
+	// printf("Disabled!!\n");
+
+	// printf("[");
+	// fflush(stdout);
+	// for (i = 1; i < 100; i++) {
+	// 	iotbus_pwm_set_enabled(m_pwm, IOTBUS_PWM_DISABLE);
+	// 	ret = iotbus_pwm_set_duty_cycle(m_pwm, i);
+	// 	if (ret != IOTBUS_ERROR_NONE) {
+	// 		printf("PWM ERROR 1 [%d]\n", ret);
+	// 		break;
+	// 	}
+	// 	ret = iotbus_pwm_set_enabled(m_pwm, IOTBUS_PWM_ENABLE);
+	// 	if (ret != IOTBUS_ERROR_NONE) {
+	// 		printf("PWM ERROR 0 [%d]\n", ret);
+	// 		return 0;
+	// 	}
+		
+	// 	if (i % 10 == 0) {
+	// 		printf("=");
+	// 		fflush(stdout);
+	// 	}
+	// 	usleep(10 * 1000);
+	// }
+	// printf("]\n");
+	// fflush(stdout);
+
+	// iotbus_pwm_set_enabled(m_pwm, IOTBUS_PWM_DISABLE);
+	
+	// iotbus_pwm_close(m_pwm);
 
 	return 0;
 }

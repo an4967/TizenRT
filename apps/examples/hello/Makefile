@@ -63,7 +63,8 @@ THREADEXEC = TASH_EXECMD_ASYNC
 # Hello, World! Example
 
 ASRCS =
-CSRCS =
+CSRCS = gpio_test.c gpio_test2.c uart_test.c pwm_test.c
+CSRCS += mem_test.c
 MAINSRC = hello_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

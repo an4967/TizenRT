@@ -56,47 +56,77 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+static char g_test_str1[] = "printf1 test printf1 test printf1 test printf1 test printf1 test printf1 test printf1 test\n";
+static char g_test_str2[] = "printf2 test printf2 test printf2 test printf2 test printf2 test printf2 test printf2 test\n";
+static char g_test_str3[] = "printf3 test printf3 test printf3 test printf3 test printf3 test printf3 test printf3 test\n";
+
+static void *printf_test1(void *arg)
+{
+	int i;
+
+	for (i = 0; i < 200; i++) {
+		printf(g_test_str1);
+        usleep(1);
+	}
+
+	return NULL;
+}
+
+static void *printf_test2(void *arg)
+{
+	int i;
+
+	for (i = 0; i < 200; i++) {
+		printf(g_test_str2);
+        usleep(2);
+	}
+	return NULL;
+}
+
+static void *printf_test3(void *arg)
+{
+	int i;
+
+	for (i = 0; i < 200; i++) {
+		printf(g_test_str3);
+        usleep(3);
+	}
+	return NULL;
+}
 
 /****************************************************************************
  * hello_main
  ****************************************************************************/
-
-
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int hello_main(int argc, char *argv[])
-#endif
+int etc_test_main(void)
 {
-	// printf("Hello, World!!\n");
+	printf("Hello, etc test!!\n");
 
-	if (argc > 1) {
-		if (argv[1][0] == 'a' || argv[1][0] == 'A') {
-			printf("[A!]\n");
-			usleep(500 * 1000);
-			gpio_test_main();
-		} else if (argv[1][0] == 'b' || argv[1][0] == 'B') {
-			printf("[B!]\n");
-			usleep(500 * 1000);
-			uart_test_main();
-		} else if (argv[1][0] == 'c' || argv[1][0] == 'C') {
-			printf("[C!]\n");
-			usleep(500 * 1000);
-			gpio_test_main2();
-		} else if (argv[1][0] == 'd' || argv[1][0] == 'D') {
-			printf("[D!]\n");
-			usleep(500 * 1000);
-			pwm_test_main();
-		} else if (argv[1][0] == 'e' || argv[1][0] == 'E') {
-			printf("[E!]\n");
-			usleep(500 * 1000);
-			mem_test_main();
-		}
-
-	} else {
-		printf("[NOT]\n");
+	pthread_t tid;
+	int ret;
+	ret = pthread_create(&tid, NULL, printf_test1, NULL);
+	if (ret < 0) {
+        printf("error pthread create\n");
+        return 0;
 	}
-	
+	pthread_detach(tid);
+
+    pthread_t tid2;
+	ret = pthread_create(&tid2, NULL, printf_test2, NULL);
+	if (ret < 0) {
+        printf("error pthread2 create\n");
+        return 0;
+	}
+	pthread_detach(tid2);
+
+    pthread_t tid3;
+	ret = pthread_create(&tid3, NULL, printf_test3, NULL);
+	if (ret < 0) {
+        printf("error pthread3 create\n");
+        return 0;
+	}
+	pthread_detach(tid3);
 
 	return 0;
 }
