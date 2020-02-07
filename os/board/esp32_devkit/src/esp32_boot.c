@@ -151,6 +151,18 @@ static void board_gpio_initialize(void)
 		uint16_t pincfg;
 	} pins[] = {
 		{
+			4, INPUT_PULLDOWN
+		}, {
+			16, INPUT_PULLDOWN
+		}, {
+			14, INPUT_PULLDOWN
+		}, {
+			27, INPUT_PULLDOWN
+		}, {
+			12, INPUT_PULLDOWN
+		}, {
+			13, INPUT_PULLDOWN
+		}, {
 			5, INPUT_PULLDOWN
 		}, {
 			15, INPUT_PULLDOWN

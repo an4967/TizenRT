@@ -67,6 +67,22 @@ int main(int argc, FAR char *argv[])
 int hello_main(int argc, char *argv[])
 #endif
 {
-	printf("Hello, World!!\n");
+	int num = -1;
+	if (argc > 1) {
+		if (argv[1][0] == 'a' || argv[1][0] == 'A') {
+			if (argc == 3) {
+				num = argv[2][0] - '0';
+			}
+			printf("[A!] %d\n", num);
+			usleep(500 * 1000);
+			gpio_test_main(num);
+		} else if (argv[1][0] == 'b' || argv[1][0] == 'B') {
+			gpio_test_main2();
+		}
+
+	} else {
+		printf("[NOTHING]\n");
+	}
+
 	return 0;
 }
