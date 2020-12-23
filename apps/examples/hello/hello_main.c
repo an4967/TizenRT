@@ -56,10 +56,107 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <semaphore.h>
+#include <time.h>
+#include <wifi_manager/wifi_manager.h>
 
 /****************************************************************************
  * hello_main
  ****************************************************************************/
+static sem_t g_wm_sem = SEM_INITIALIZER(0);
+static sem_t g_wm_func_sem = SEM_INITIALIZER(0);
+
+#define WM_TEST_SIGNAL								\
+	do {											\
+		sem_post(&g_wm_sem);						\
+		printf("[WT] T%d send signal\n", getpid());	\
+	} while (0)
+
+#define WM_TEST_WAIT								\
+	do {											\
+		printf("[WT] T%d wait signal\n", getpid());	\
+		sem_wait(&g_wm_sem);                        \
+	} while (0)
+
+#define WM_TEST_FUNC_SIGNAL									\
+	do {													\
+		sem_post(&g_wm_func_sem);							\
+		printf("[WT]  T%d send func signal\n", getpid());	\
+	} while (0)
+
+#define WM_TEST_FUNC_WAIT									\
+	do {													\
+		printf("[WT]  T%d wait func signal\n", getpid());	\
+		sem_wait(&g_wm_func_sem);							\
+	} while (0)
+
+#define WM_TEST_LOG_START						\
+	do {										\
+		printf("[WT] -->%s\n", __FUNCTION__);	\
+	} while (0)
+
+
+#define WM_TEST_LOG_END							\
+	do {										\
+		printf("[WT] <--%s\n", __FUNCTION__);	\
+	} while (0)
+
+
+void wm_sta_connected(wifi_manager_result_e res)
+{
+	printf("[WT]  T%d --> %s res(%d)\n", getpid(), __FUNCTION__, res);
+	WM_TEST_SIGNAL;
+}
+
+void wm_sta_disconnected(wifi_manager_disconnect_e disconn)
+{
+	sleep(2);
+	printf("[WT]  T%d --> %s\n", getpid(), __FUNCTION__);
+	WM_TEST_SIGNAL;
+}
+
+void wm_softap_sta_join(void)
+{
+	printf("[WT]  T%d --> %s\n", getpid(), __FUNCTION__);
+	WM_TEST_SIGNAL;
+}
+
+void wm_softap_sta_leave(void)
+{
+	printf("[WT]  T%d --> %s\n", getpid(), __FUNCTION__);
+	WM_TEST_SIGNAL;
+}
+
+void wm_scan_done(wifi_manager_scan_info_s **scan_result, wifi_manager_scan_result_e res)
+{
+	printf("[WT]  T%d --> %s\n", getpid(), __FUNCTION__);
+	/* Make sure you copy the scan results onto a local data structure.
+	 * It will be deleted soon eventually as you exit this function.
+	 */
+	if (scan_result == NULL) {
+		WM_TEST_SIGNAL;
+		return;
+	}
+	wifi_manager_scan_info_s *wifi_scan_iter = *scan_result;
+	int cnt = 0;
+	while (wifi_scan_iter != NULL) {
+		cnt++;
+		wifi_scan_iter = wifi_scan_iter->next;
+	}
+	printf("[WT] WiFi AP Scan Result : %d\n", cnt);
+	WM_TEST_SIGNAL;
+}
+
+
+static wifi_manager_cb_s wifi_callbacks = {
+	wm_sta_connected,
+	wm_sta_disconnected,
+	wm_softap_sta_join,
+	wm_softap_sta_leave,
+	wm_scan_done,
+};
+
+static struct timespec now;
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -67,6 +164,54 @@ int main(int argc, FAR char *argv[])
 int hello_main(int argc, char *argv[])
 #endif
 {
-	printf("Hello, World!!\n");
+	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
+
+	(void)clock_gettime(CLOCK_REALTIME, &now);
+	printf("-- [Test] App Start : (%lu sec, %lu nsec)\n", (unsigned long)now.tv_sec, (unsigned long)now.tv_nsec);
+
+	res = wifi_manager_init(&wifi_callbacks);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("[WT]  wifi_manager_init fail\n");
+	}
+
+	(void)clock_gettime(CLOCK_REALTIME, &now);
+	printf("-- [Test] WiFI Init : (%lu sec, %lu nsec)\n", (unsigned long)now.tv_sec, (unsigned long)now.tv_nsec);
+
+	res = wifi_manager_scan_ap();
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("[WT]  scan Fail\n");
+		return;
+	}
+	WM_TEST_WAIT; // wait the scan result
+
+	(void)clock_gettime(CLOCK_REALTIME, &now);
+	printf("-- [Test] WiFI Scan : (%lu sec, %lu nsec)\n", (unsigned long)now.tv_sec, (unsigned long)now.tv_nsec);
+
+	wifi_manager_softap_config_s ap_config;
+	strncpy(ap_config.ssid, "WiFiTest123", WIFIMGR_SSID_LEN-1);
+	ap_config.ssid[WIFIMGR_SSID_LEN-1] = '\0';
+	strncpy(ap_config.passphrase, "12345678", WIFIMGR_PASSPHRASE_LEN-1);
+	ap_config.passphrase[WIFIMGR_PASSPHRASE_LEN-1] = '\0';
+	ap_config.channel = 1;
+
+	res = wifi_manager_set_mode(SOFTAP_MODE, &ap_config);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("[WT]  Run SoftAP Fail\n");
+	}
+
+	(void)clock_gettime(CLOCK_REALTIME, &now);
+	printf("-- [Test] WiFI SoftAP : (%lu sec, %lu nsec)\n", (unsigned long)now.tv_sec, (unsigned long)now.tv_nsec);
+
+	res = wifi_manager_set_mode(STA_MODE, NULL);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		printf("[WT]  Set STA mode Fail\n");
+		return;
+	}
+
+	(void)clock_gettime(CLOCK_REALTIME, &now);
+	printf("-- [Test] WiFI STA : (%lu sec, %lu nsec)\n", (unsigned long)now.tv_sec, (unsigned long)now.tv_nsec);
+
+	printf("-- WiFi Test Done!!\n");
+
 	return 0;
 }
